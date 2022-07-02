@@ -1,0 +1,4 @@
+Sử dụng toàn bộ dữ liệu dữ liệu text trong thư mục: sample-data theo thứ tự trường có sẵn. Tạo file parquet ‘pageviewlog’ với tất cả các trường trong model. Chuyển toàn bộ dữ liệu text thành file parquest hoặc avro và thực hiện các job sau:
+  3.1 Lấy url đã truy cập nhiều nhất trong ngày của mỗi guid
+  3.2 Các IP được sử dụng bởi nhiều guid nhất số guid không tính lặp lại, không tính số lần sử dụng chỉ lấy số lượng guid (Lấy top 1000 và số guid duy nhất sử dụng)
+  3.3 Tính các guid mà có timeCreate – cookieCreate nhỏ hơn 30 phút
