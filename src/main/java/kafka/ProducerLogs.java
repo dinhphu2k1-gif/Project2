@@ -75,6 +75,8 @@ public class ProducerLogs {
                             System.out.println(String.format("Message written to partition %s with offset %s", recordMetadata.partition(),
                                     recordMetadata.offset()));
                         }
+
+                        Thread.sleep(1000);
                     }
                 }
                 catch (Exception e) {
