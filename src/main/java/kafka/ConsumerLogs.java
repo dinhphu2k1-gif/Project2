@@ -77,25 +77,28 @@ public class ConsumerLogs {
     public void writeData() {
         Dataset<Row> df = this.readData();
 
-//        try {
-//            df.writeStream()
-//                    .format("console")
-//                    .outputMode("append")
-//                    .option("truncate", false)
-//                    .start()
-//                    .awaitTermination();
-//        } catch (StreamingQueryException e) {
-//            throw new RuntimeException(e);
-//        } catch (TimeoutException e) {
-//            throw new RuntimeException(e);
-//        }
+//        df.write().partitionBy("year", "month", "day").parquet(destinationPath);
+
+        try {
+            df.writeStream()
+                    .trigger(Trigger.ProcessingTime("1 minute"))
+                    .format("console")
+                    .outputMode("append")
+                    .option("truncate", false)
+                    .start()
+                    .awaitTermination();
+        } catch (StreamingQueryException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             df.coalesce(1).writeStream()
                     .trigger(Trigger.ProcessingTime("1 minute"))
                     .partitionBy("year", "month", "day")
                     .format("parquet")
-                    .option("path", destinationPath)
+                    .option("path", destinationPath + "2")
                     .option("checkpointLocation", checkpoint)
                     .outputMode("append")
                     .start()
@@ -105,58 +108,7 @@ public class ConsumerLogs {
         }
     }
 
-    /**
-     * Lấy url đã truy cập nhiều nhất trong ngày của mỗi guid
-     *
-     * @param data
-     */
-    public void exe1(Dataset<Row> data) {
-        Dataset<Row> data1 = data.groupBy("guid", "domain").count();
-//        data1.show();
-        Dataset<Row> data2 = data1.groupBy("guid").agg(max("count").as("max"));
-//        data2.show();
 
-        data1.createOrReplaceTempView("data1");
-        data2.createOrReplaceTempView("data2");
-
-        Dataset<Row> data3 = spark.sql("SELECT data1.guid, data1.domain FROM data1 INNER JOIN data2 ON data1.guid = data2.guid AND data1.count = data2.max");
-        System.out.println("Lấy url đã truy cập nhiều nhất trong ngày của mỗi guid");
-        data3.show(false);
-
-        // lưu lại kết quả
-//        data3.write().parquet(resultPath + "/exe1");
-        data3.write().option("delimiter", ";").option("header", "true").mode(SaveMode.Overwrite).csv(destination + "/ex1");
-    }
-
-    /**
-     * Các IP được sử dụng bởi nhiều guid nhất số guid không tính lặp lại
-     *
-     * @param data
-     */
-    public void exe2(Dataset<Row> data) {
-        Dataset<Row> data1 = data.groupBy("ip").agg(count_distinct(col("guid")).as("count")).orderBy(col("count").desc());
-        System.out.println("Các IP được sử dụng bởi nhiều guid nhất");
-        data1.show(false);
-
-//        data1.write().parquet(resultPath + "/exe2");
-        data1.write().option("delimiter", ";").option("header", "true").mode(SaveMode.Overwrite).csv(destination + "/ex2");
-    }
-
-    /**
-     * Tính các guid mà có timeCreate – cookieCreate nhỏ hơn 30 phút
-     *
-     * @param data
-     */
-    public void exe3(Dataset<Row> data) {
-        Dataset<Row> data1 = data.select(col("guid")
-                , col("timeCreate").cast("long").minus(col("cookieCreate").cast("long")).as("duration"));
-        data1 = data1.filter(col("duration").lt(30 * 60000));
-        System.out.println("Tính các guid mà có timeCreate – cookieCreate nhỏ hơn 30 phút");
-        data1.show(false);
-
-//        data1.write().parquet(resultPath + "/exe3");
-        data1.write().option("delimiter", ";").option("header", "true").mode(SaveMode.Overwrite).csv(destination + "/ex3");
-    }
 
     public void run() {
         this.spark = SparkSession.builder()
